@@ -1,0 +1,10 @@
+FROM golang:1.22
+
+WORKDIR /app
+COPY main.go .
+RUN go mod init loadbalancer
+RUN go get github.com/prometheus/client_golang/prometheus
+RUN go get github.com/prometheus/client_golang/prometheus/promhttp
+RUN go build -o loadbalancer .
+
+CMD ["./loadbalancer"]

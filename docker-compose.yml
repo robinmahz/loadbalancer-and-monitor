@@ -1,0 +1,95 @@
+version: "3.8"
+services:
+  backend1:
+    build: ./backend
+    environment:
+      - SERVER_NAME=backend1
+      - CAPACITY=small
+      - PORT=8081
+    expose:
+      - 8081
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1" # 20% of one CPU core
+          memory: 64M # 128 MB memory
+        reservations:
+          memory: 64M
+    networks:
+      - app-network
+
+  backend2:
+    build: ./backend
+    environment:
+      - SERVER_NAME=backend2
+      - CAPACITY=medium
+      - PORT=8082
+    expose:
+      - 8082
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25" # 50% of one CPU core
+          memory: 128M # 256 MB memory
+        reservations:
+          memory: 128M
+    networks:
+      - app-network
+
+  backend3:
+    build: ./backend
+    environment:
+      - SERVER_NAME=backend3
+      - CAPACITY=large
+      - PORT=8083
+    expose:
+      - 8083
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5" # 100% of one CPU core
+          memory: 256M # 512 MB memory
+        reservations:
+          memory: 250M
+    networks:
+      - app-network
+
+  loadbalancer:
+    build: ./loadbalancer
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+    networks:
+      - app-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - loadbalancer
+      - backend1
+      - backend2
+      - backend3
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

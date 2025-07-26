@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 3s
+
+scrape_configs:
+  - job_name: "loadbalancer"
+    static_configs:
+      - targets: ["loadbalancer:8000"]
+  - job_name: "backend"
+    static_configs:
+      - targets: ["backend1:8081", "backend2:8082", "backend3:8083"]
