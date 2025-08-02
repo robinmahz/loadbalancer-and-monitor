@@ -1,4 +1,8 @@
-Go Load Balancer: Comparative Analysis of Load Balancing AlgorithmsThis project implements and compares three load balancing algorithms—Weighted Round-Robin (WRR), Round-Robin (RR), and Least Connections—using Go. The load balancer distributes HTTP requests across three backend servers with varying capacities (small, medium, large). Prometheus and Grafana are used for monitoring and performance analysis. All services are containerized with Docker and orchestrated using Docker Compose. A detailed report analyzes the performance of the implemented algorithms.Project Structure
+# Go Load Balancer: Comparative Analysis of Load Balancing Algorithms
+
+This project implements and compares three load balancing algorithms—Weighted Round-Robin (WRR), Round-Robin (RR), and Least Connections—using Go. The load balancer distributes HTTP requests across three backend servers with varying capacities (small, medium, large). Prometheus and Grafana are used for monitoring and performance analysis. All services are containerized with Docker and orchestrated using Docker Compose. A detailed report analyzes the performance of the implemented algorithms.
+
+## Project Structure
 
 go-load-balancer/
 ├── FinalProjectReportToPrint.pdf # Report comparing load balancing algorithms
@@ -14,24 +18,31 @@ go-load-balancer/
 └── prometheus/ # Prometheus configuration
 └── prometheus.yml # Prometheus configuration file
 
-FeaturesLoad Balancer: Implements three algorithms:Round-Robin (RR): Distributes requests equally across backends in a cyclic order.
-Weighted Round-Robin (WRR): Distributes requests based on backend capacities (small, medium, large).
-Least Connections: Routes requests to the backend with the fewest active connections.
+## Features
 
-Backend Services: Three Go-based HTTP servers:backend1: Small capacity, port 8081.
-backend2: Medium capacity, port 8082.
-backend3: Large capacity, port 8083.
+- **Load Balancer**: Implements three algorithms:
+  - **Round-Robin (RR)**: Distributes requests equally across backends in a cyclic order.
+  - **Weighted Round-Robin (WRR)**: Distributes requests based on backend capacities (small, medium, large).
+  - **Least Connections**: Routes requests to the backend with the fewest active connections.
+- **Backend Services**: Three Go-based HTTP servers:
+  - `backend1`: Small capacity, port 8081.
+  - `backend2`: Medium capacity, port 8082.
+  - `backend3`: Large capacity, port 8083.
+- **Monitoring**: Prometheus collects metrics, and Grafana visualizes performance for algorithm comparison.
+- **Containerized**: Services run in Docker containers, connected via a bridge network (`app-network`).
+- **Configurable Resources**: CPU and memory limits are defined in `docker-compose.yml`.
 
-Monitoring: Prometheus collects metrics, and Grafana visualizes performance for algorithm comparison.
-Containerized: Services run in Docker containers, connected via a bridge network (app-network).
-Configurable Resources: CPU and memory limits are defined in docker-compose.yml.
+## Prerequisites
 
-PrerequisitesDocker (with Docker Compose)
-Go (optional, for development)
-Basic understanding of HTTP, load balancing, and containerization
+- Docker (with Docker Compose)
+- Go (optional, for development)
+- Basic understanding of HTTP, load balancing, and containerization
 
-Getting Started1. Clone the Repositorybash
+## Getting Started
 
+### 1. Clone the Repository
+
+```bash
 git clone <repository-url>
 cd go-load-balancer
 
@@ -101,3 +112,4 @@ Metrics: I included example metrics (latency, throughput, connection counts) rel
 Algorithm Switching: I assumed algorithms are switched via code changes in main.go or environment variables. If your load balancer supports a specific mechanism (e.g., API, config file), let me know, and I’ll update the instructions.
 Report: The README highlights the comparative analysis in FinalProjectReportToPrint.pdf. If you want to emphasize specific findings (e.g., WRR outperforms RR under high load), I can add them.
 Repository URL and License: These are placeholders; replace them with actual values.
+```
