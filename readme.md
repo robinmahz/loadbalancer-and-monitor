@@ -5,18 +5,24 @@ This project implements and compares three load balancing algorithms—Weighted 
 ## Project Structure
 
 go-load-balancer/
-├── FinalProjectReportToPrint.pdf # Report comparing load balancing algorithms
-├── backend/ # Backend service source
-│ ├── Dockerfile # Dockerfile for backend service
-│ └── main.go # Backend service implementation in Go
-├── docker-compose.yml # Docker Compose configuration for services
-├── grafana/ # Grafana configuration
-│ └── datasource.yml # Grafana datasource configuration for Prometheus
-├── loadbalancer/ # Load balancer source
-│ ├── Dockerfile # Dockerfile for load balancer
-│ └── main.go # Load balancer with WRR, RR, and Least Connections
-└── prometheus/ # Prometheus configuration
-└── prometheus.yml # Prometheus configuration file
+│
+├── FinalProjectReportToPrint.pdf
+│
+├── backend/
+│ ├── Dockerfile
+│ └── main.go
+│
+├── docker-compose.yml
+│
+├── grafana/
+│ └── datasource.yml
+│
+├── loadbalancer/
+│ ├── Dockerfile
+│ └── main.go
+│
+└── prometheus/
+└── prometheus.yml
 
 ## Features
 
