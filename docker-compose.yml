@@ -11,10 +11,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.1" # 20% of one CPU core
-          memory: 64M # 128 MB memory
+          cpus: "1" # 20% of one CPU core
+          memory: 512M # 128 MB memory
         reservations:
-          memory: 64M
+          memory: 256M
     networks:
       - app-network
 
@@ -29,10 +29,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: ".25" # 50% of one CPU core
-          memory: 128M # 256 MB memory
+          cpus: "1" # 50% of one CPU core
+          memory: 512M # 256 MB memory
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - app-network
 
@@ -47,10 +47,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5" # 100% of one CPU core
-          memory: 256M # 512 MB memory
+          cpus: "1" # 100% of one CPU core
+          memory: 512M # 512 MB memory
         reservations:
-          memory: 250M
+          memory: 256M
     networks:
       - app-network
 

@@ -28,21 +28,14 @@ var (
         },
         []string{"backend"},
     )
-    activeConnections = prometheus.NewGaugeVec(
-        prometheus.GaugeOpts{
-            Name: "lb_active_connections",
-            Help: "Number of active connections per backend.",
-        },
-        []string{"backend"},
-    )
 )
 
 type Backend struct {
-    URL              *url.URL
-    Alive            bool
-    ReverseProxy     *httputil.ReverseProxy
-    ActiveConnections int // Tracks current number of active connections
-    mu               sync.Mutex  // Protects ActiveConnections
+    URL          *url.URL
+    Alive        bool
+    ReverseProxy *httputil.ReverseProxy
+    Weight       int // Added weight field
+    CurrentWeight int // Added for weighted round-robin algorithm
 }
 
 type LoadBalancer struct {
@@ -50,15 +43,19 @@ type LoadBalancer struct {
     mu       sync.Mutex
 }
 
-func NewLoadBalancer(backendURLs []string) *LoadBalancer {
+func NewLoadBalancer(backendURLs []string, weights []int) *LoadBalancer {
+    if len(backendURLs) != len(weights) {
+        log.Fatal("Number of backends and weights must match")
+    }
     backends := make([]*Backend, len(backendURLs))
     for i, backendURL := range backendURLs {
         url, _ := url.Parse(backendURL)
         backends[i] = &Backend{
-            URL:              url,
-            Alive:            true,
-            ReverseProxy:     httputil.NewSingleHostReverseProxy(url),
-            ActiveConnections: 0,
+            URL:          url,
+            Alive:        true,
+            ReverseProxy: httputil.NewSingleHostReverseProxy(url),
+            Weight:       weights[i],
+            CurrentWeight: weights[i], // Initialize current weight to max weight
         }
     }
     return &LoadBalancer{backends: backends}
@@ -68,16 +65,17 @@ func (lb *LoadBalancer) getNextBackend() *Backend {
     lb.mu.Lock()
     defer lb.mu.Unlock()
 
-    minConnections := -1
+    // Find total weight and maximum current weight
+    totalWeight := 0
+    maxCurrentWeight := -1
     var selectedBackend *Backend
 
     for _, backend := range lb.backends {
         if backend.Alive {
-            backend.mu.Lock()
-            conn := backend.ActiveConnections
-            backend.mu.Unlock()
-            if minConnections == -1 || conn < minConnections {
-                minConnections = conn
+            totalWeight += backend.Weight
+            backend.CurrentWeight += backend.Weight
+            if backend.CurrentWeight > maxCurrentWeight {
+                maxCurrentWeight = backend.CurrentWeight
                 selectedBackend = backend
             }
         }
@@ -87,6 +85,9 @@ func (lb *LoadBalancer) getNextBackend() *Backend {
         return nil // No healthy backends available
     }
 
+    // Decrease the current weight of the selected backend
+    selectedBackend.CurrentWeight -= totalWeight
+
     return selectedBackend
 }
 
@@ -94,12 +95,10 @@ func (lb *LoadBalancer) healthCheck() {
     for {
         for _, backend := range lb.backends {
             resp, err := http.Get(backend.URL.String() + "/")
-            backend.mu.Lock()
-            backend.Alive = err == nil && resp != nil && resp.StatusCode == http.StatusOK
+            backend.Alive = err == nil && resp.StatusCode == http.StatusOK
             if !backend.Alive {
                 log.Printf("Backend %s is down", backend.URL.String())
             }
-            backend.mu.Unlock()
         }
         time.Sleep(10 * time.Second)
     }
@@ -112,48 +111,14 @@ func (lb *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Increment active connections
-    backend.mu.Lock()
-    backend.ActiveConnections++
-    activeConnections.WithLabelValues(backend.URL.String()).Inc()
-    backend.mu.Unlock()
-
     start := time.Now()
     requestCounter.WithLabelValues(backend.URL.String()).Inc()
-
-    // Wrap the response writer to detect when the request is complete
-    responseWriter := &responseWriterWrapper{
-        ResponseWriter: w,
-        onClose: func() {
-            backend.mu.Lock()
-            backend.ActiveConnections--
-            activeConnections.WithLabelValues(backend.URL.String()).Dec()
-            backend.mu.Unlock()
-        },
-    }
-
-    backend.ReverseProxy.ServeHTTP(responseWriter, r)
+    backend.ReverseProxy.ServeHTTP(w, r)
     requestDuration.WithLabelValues(backend.URL.String()).Observe(time.Since(start).Seconds())
 }
 
-// responseWriterWrapper wraps http.ResponseWriter to detect when the response is complete
-type responseWriterWrapper struct {
-    http.ResponseWriter
-    onClose func()
-}
-
-func (w *responseWriterWrapper) Write(data []byte) (int, error) {
-    defer w.onClose()
-    return w.ResponseWriter.Write(data)
-}
-
-func (w *responseWriterWrapper) WriteHeader(statusCode int) {
-    defer w.onClose()
-    w.ResponseWriter.WriteHeader(statusCode)
-}
-
 func init() {
-    prometheus.MustRegister(requestCounter, requestDuration, activeConnections)
+    prometheus.MustRegister(requestCounter, requestDuration)
 }
 
 func main() {
@@ -162,8 +127,9 @@ func main() {
         "http://backend2:8082",
         "http://backend3:8083",
     }
+    weights := []int{1, 2, 3} // Example weights: backend1 gets 1/6, backend2 gets 2/6, backend3 gets 3/6 of requests
 
-    lb := NewLoadBalancer(backendURLs)
+    lb := NewLoadBalancer(backendURLs, weights)
     go lb.healthCheck()
 
     http.Handle("/metrics", promhttp.Handler())
