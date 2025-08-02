@@ -258,3 +258,5 @@ Refer to the `LICENSE` file for full terms.
 
 - **Performance Highlights**:  
   Want to showcase WRR’s superior performance under heavy load? I can help include key findings from the report here.
+
+- **To change load balancing algorithm change the branches**
